@@ -9,7 +9,7 @@ docker compose up -d
 echo "==> 基建就绪。分别在四个终端执行："
 echo
 echo "  [identity]     cd $(pwd) && mvn spring-boot:run -Dspring-boot.run.profiles=local -Dspring-boot.run.jvmArguments=--enable-preview"
-echo "  [identity-web] cd $(pwd)/../aieducenter-identity-web && pnpm install && pnpm dev"
+echo "  [identity-web] cd $(pwd)/../semgravio-identity-web && pnpm install && pnpm dev"
 echo "  [bff]          cd $(pwd)/demo/demo-backend && mvn spring-boot:run -Dspring-boot.run.profiles=local -Dspring-boot.run.jvmArguments=--enable-preview"
 echo "  [web]          cd $(pwd)/demo/demo-web && pnpm install && pnpm dev"
 echo

@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - Java 21，编译/运行均带 `--enable-preview`（parent 已配 surefire argLine）。
-- 所有 identity 侧新代码落在现有 `com.aieducenter.aieducenteridentity.sso` 包结构内，遵循六边形分层（controller→application→domain），`ArchitectureTest` 守卫。
+- 所有 identity 侧新代码落在现有 `com.semgravio.semgravioidentity.sso` 包结构内，遵循六边形分层（controller→application→domain），`ArchitectureTest` 守卫。
 - dev 一键登 + seeder **只用配置开关** `identity.sso.dev-login.enabled=true` 启用（不用 `@Profile`），prod 永不设此开关 → bean 不注册。
 - token 只存 BFF 内存（`ConcurrentHashMap`），浏览器不接触 token；业务 cookie `demo_session`（httpOnly+Secure+SameSite-Lax）。
 - 本期**不调** `/userinfo`、**不验** id_token 签名（#17 未建）；用户信息从 id_token claims 解。
@@ -36,7 +36,7 @@
 - Modify: `CONTEXT.md` — 「开发测试」段落补 .localhost 端口与 dev-login 兜底说明。
 
 **demo-backend（新增，独立项目 `demo/demo-backend/`）：**
-- `pom.xml`、`src/main/java/com/aieducenter/demobff/DemoBffApplication.java`
+- `pom.xml`、`src/main/java/com/semgravio/demobff/DemoBffApplication.java`
 - `config/SsoProperties.java`（issuer/clientId/secret/redirectUri/scope/appBaseUrl）
 - `sso/BffSession.java`、`sso/BffSessionStore.java`、`sso/OidcClient.java`、`sso/TokenResponse.java`、`sso/AuthController.java`、`sso/MeController.java`
 - `src/main/resources/application.yml` + `application-local.yml`
@@ -51,17 +51,17 @@
 ## Task 1: SsoProperties 加 dev-login 配置
 
 **Files:**
-- Modify: `src/main/java/com/aieducenter/aieducenteridentity/sso/config/SsoProperties.java`
+- Modify: `src/main/java/com/semgravio/semgravioidentity/sso/config/SsoProperties.java`
 
 **Interfaces:**
 - Produces: `SsoProperties.getDevLogin()` → `DevLogin{ enabled, accountEmail, accountPassword, accountNickname }`，绑定 `identity.sso.dev-login.*`。`@ConditionalOnProperty(prefix="identity.sso.dev-login", name="enabled", havingValue="true")` 后续任务据此门控。
 
 - [ ] **Step 1: 写失败测试**
 
-Create `src/test/java/com/aieducenter/aieducenteridentity/sso/config/SsoPropertiesTest.java`:
+Create `src/test/java/com/semgravio/semgravioidentity/sso/config/SsoPropertiesTest.java`:
 
 ```java
-package com.aieducenter.aieducenteridentity.sso.config;
+package com.semgravio.semgravioidentity.sso.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -87,11 +87,11 @@ class SsoPropertiesTest {
     void devLogin_binds_from_relaxed_names() {
         SsoProperties p = bind(Map.of(
             "identity.sso.dev-login.enabled", "true",
-            "identity.sso.dev-login.account-email", "demo@aieducenter.com",
+            "identity.sso.dev-login.account-email", "demo@semgravio.com",
             "identity.sso.dev-login.account-password", "demo12345",
             "identity.sso.dev-login.account-nickname", "Demo 用户"));
         assertThat(p.getDevLogin().isEnabled()).isTrue();
-        assertThat(p.getDevLogin().getAccountEmail()).isEqualTo("demo@aieducenter.com");
+        assertThat(p.getDevLogin().getAccountEmail()).isEqualTo("demo@semgravio.com");
         assertThat(p.getDevLogin().getAccountNickname()).isEqualTo("Demo 用户");
     }
 }
@@ -125,7 +125,7 @@ Expected: FAIL（`getDevLogin()` 不存在，编译失败）。
         /** 是否启用 dev 一键登（prod 必须为 false）。 */
         private boolean enabled = false;
         /** 预置测试账号邮箱（dev-login 按此定位账号）。 */
-        private String accountEmail = "demo@aieducenter.com";
+        private String accountEmail = "demo@semgravio.com";
         /** 预置测试账号明文密码（seeder 加密入库；也供真实登录页联调用）。 */
         private String accountPassword = "demo12345";
         /** 预置测试账号昵称。 */
@@ -150,8 +150,8 @@ Expected: PASS（2 tests）。
 - [ ] **Step 5: 提交**
 
 ```bash
-git add src/main/java/com/aieducenter/aieducenteridentity/sso/config/SsoProperties.java \
-        src/test/java/com/aieducenter/aieducenteridentity/sso/config/SsoPropertiesTest.java
+git add src/main/java/com/semgravio/semgravioidentity/sso/config/SsoProperties.java \
+        src/test/java/com/semgravio/semgravioidentity/sso/config/SsoPropertiesTest.java
 git commit -m "feat(#16): SsoProperties 加 dev-login 配置开关与预置账号"
 ```
 
@@ -160,19 +160,19 @@ git commit -m "feat(#16): SsoProperties 加 dev-login 配置开关与预置账�
 ## Task 2: DevAccountSeeder（启动种测试账号）
 
 **Files:**
-- Create: `src/main/java/com/aieducenter/aieducenteridentity/sso/dev/DevAccountSeeder.java`
-- Create: `src/main/java/com/aieducenter/aieducenteridentity/sso/dev/package-info.java`
+- Create: `src/main/java/com/semgravio/semgravioidentity/sso/dev/DevAccountSeeder.java`
+- Create: `src/main/java/com/semgravio/semgravioidentity/sso/dev/package-info.java`
 
 **Interfaces:**
 - Consumes: `SsoProperties.getDevLogin()`、`AccountRepository`、`ProfileRepository`、`AccountPasswordEncoderService`、`Account.register(email,phone,encoded)`、`Profile.create(userId,nickname,avatar)`。
-- Produces: 当 `identity.sso.dev-login.enabled=true` 时，启动后 DB 里有 `demo@aieducenter.com` 账号 + Profile。
+- Produces: 当 `identity.sso.dev-login.enabled=true` 时，启动后 DB 里有 `demo@semgravio.com` 账号 + Profile。
 
 - [ ] **Step 1: 写失败测试**
 
-Create `src/test/java/com/aieducenter/aieducenteridentity/sso/dev/DevAccountSeederTest.java`:
+Create `src/test/java/com/semgravio/semgravioidentity/sso/dev/DevAccountSeederTest.java`:
 
 ```java
-package com.aieducenter.aieducenteridentity.sso.dev;
+package com.semgravio.semgravioidentity.sso.dev;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -181,8 +181,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
 
-import com.aieducenter.aieducenteridentity.account.domain.repository.AccountRepository;
-import com.aieducenter.aieducenteridentity.test.IdentityIntegrationTestBase;
+import com.semgravio.semgravioidentity.account.domain.repository.AccountRepository;
+import com.semgravio.semgravioidentity.test.IdentityIntegrationTestBase;
 
 /**
  * seeder 在上下文启动时跑（dev-login 开关开）；这里复用已起好的上下文验证账号已种。
@@ -197,8 +197,8 @@ class DevAccountSeederTest extends IdentityIntegrationTestBase {
 
     @Test
     void seeded_demo_account_exists() {
-        assertThat(accountRepository.findByEmail("demo@aieducenter.com"))
-            .as("seeder 应在启动时种入 demo@aieducenter.com")
+        assertThat(accountRepository.findByEmail("demo@semgravio.com"))
+            .as("seeder 应在启动时种入 demo@semgravio.com")
             .isPresent();
     }
 }
@@ -211,20 +211,20 @@ Expected: FAIL（账号不存在 / seeder 未注册）。
 
 - [ ] **Step 3: 最小实现**
 
-Create `src/main/java/com/aieducenter/aieducenteridentity/sso/dev/package-info.java`:
+Create `src/main/java/com/semgravio/semgravioidentity/sso/dev/package-info.java`:
 
 ```java
 /**
  * dev 一键登支持：启动种测试账号（identity-web 登录页缺席时的联调便利，issue #16）。
  * 全部由 {@code identity.sso.dev-login.enabled} 门控，prod 不开。
  */
-package com.aieducenter.aieducenteridentity.sso.dev;
+package com.semgravio.semgravioidentity.sso.dev;
 ```
 
-Create `src/main/java/com/aieducenter/aieducenteridentity/sso/dev/DevAccountSeeder.java`:
+Create `src/main/java/com/semgravio/semgravioidentity/sso/dev/DevAccountSeeder.java`:
 
 ```java
-package com.aieducenter.aieducenteridentity.sso.dev;
+package com.semgravio.semgravioidentity.sso.dev;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -234,17 +234,17 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.aieducenter.aieducenteridentity.account.domain.aggregate.Account;
-import com.aieducenter.aieducenteridentity.account.domain.aggregate.Profile;
-import com.aieducenter.aieducenteridentity.account.domain.repository.AccountRepository;
-import com.aieducenter.aieducenteridentity.account.domain.repository.ProfileRepository;
-import com.aieducenter.aieducenteridentity.account.domain.service.AccountPasswordEncoderService;
-import com.aieducenter.aieducenteridentity.sso.config.SsoProperties;
+import com.semgravio.semgravioidentity.account.domain.aggregate.Account;
+import com.semgravio.semgravioidentity.account.domain.aggregate.Profile;
+import com.semgravio.semgravioidentity.account.domain.repository.AccountRepository;
+import com.semgravio.semgravioidentity.account.domain.repository.ProfileRepository;
+import com.semgravio.semgravioidentity.account.domain.service.AccountPasswordEncoderService;
+import com.semgravio.semgravioidentity.sso.config.SsoProperties;
 
 /**
  * dev 测试账号 seeder（issue #16）。
  *
- * <p>{@code identity.sso.dev-login.enabled=true} 时启动：若 {@code demo@aieducenter.com} 不存在则建账号 + Profile。
+ * <p>{@code identity.sso.dev-login.enabled=true} 时启动：若 {@code demo@semgravio.com} 不存在则建账号 + Profile。
  * 幂等（已存在即跳过）。dev-login 端点登这个账号。仅 dev/local 联调用，prod 不开此开关。</p>
  */
 @Component
@@ -290,8 +290,8 @@ Expected: PASS。
 - [ ] **Step 5: 提交**
 
 ```bash
-git add src/main/java/com/aieducenter/aieducenteridentity/sso/dev/ \
-        src/test/java/com/aieducenter/aieducenteridentity/sso/dev/DevAccountSeederTest.java
+git add src/main/java/com/semgravio/semgravioidentity/sso/dev/ \
+        src/test/java/com/semgravio/semgravioidentity/sso/dev/DevAccountSeederTest.java
 git commit -m "feat(#16): DevAccountSeeder——dev 启动种测试账号（开关门控）"
 ```
 
@@ -300,9 +300,9 @@ git commit -m "feat(#16): DevAccountSeeder——dev 启动种测试账号（开�
 ## Task 3: DevLoginAppService + DevLoginController（dev 一键登端点）
 
 **Files:**
-- Create: `src/main/java/com/aieducenter/aieducenteridentity/sso/application/DevLoginAppService.java`
-- Create: `src/main/java/com/aieducenter/aieducenteridentity/sso/endpoints/controller/DevLoginController.java`
-- Create: `src/test/java/com/aieducenter/aieducenteridentity/sso/endpoints/DevLoginFlowIntegrationTest.java`
+- Create: `src/main/java/com/semgravio/semgravioidentity/sso/application/DevLoginAppService.java`
+- Create: `src/main/java/com/semgravio/semgravioidentity/sso/endpoints/controller/DevLoginController.java`
+- Create: `src/test/java/com/semgravio/semgravioidentity/sso/endpoints/DevLoginFlowIntegrationTest.java`
 
 **Interfaces:**
 - Consumes: `SsoClientValidationService.requireActiveClient/requireRedirectUri`、`AccountRepository.findByEmail`、`Account.ensureLoginable/displayLabel`、`ProfileRepository.findById`、`SsoSessionRepository.create(userId,displayName)`、`AuthorizationCodeAppService.issueCodeAndRedirect(userId,client,redirectUri,nonce,scope,state)`、`SsoCookieService.setSessionCookie`。
@@ -310,10 +310,10 @@ git commit -m "feat(#16): DevAccountSeeder——dev 启动种测试账号（开�
 
 - [ ] **Step 1: 写失败测试**
 
-Create `src/test/java/com/aieducenter/aieducenteridentity/sso/endpoints/DevLoginFlowIntegrationTest.java`:
+Create `src/test/java/com/semgravio/semgravioidentity/sso/endpoints/DevLoginFlowIntegrationTest.java`:
 
 ```java
-package com.aieducenter.aieducenteridentity.sso.endpoints;
+package com.semgravio.semgravioidentity.sso.endpoints;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -332,12 +332,12 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.aieducenter.aieducenteridentity.account.domain.repository.AccountRepository;
+import com.semgravio.semgravioidentity.account.domain.repository.AccountRepository;
 
 /**
  * dev 一键登闭环（issue #16）：identity-web 缺席时 /authorize 无 cookie 跳 dev-login，
  * dev-login 自动登预置测试账号 → 发 code → /token 换 token；二次凭 cookie 免登。
- * 打开 dev-login 开关后 seeder 已在上下文启动时种入 demo@aieducenter.com。
+ * 打开 dev-login 开关后 seeder 已在上下文启动时种入 demo@semgravio.com。
  */
 @Transactional
 @DirtiesContext
@@ -355,7 +355,7 @@ class DevLoginFlowIntegrationTest extends SsoIntegrationTestBase {
 
     @Test
     void authorize_without_cookie_dev_login_then_token() throws Exception {
-        assertThat(accountRepository.findByEmail("demo@aieducenter.com")).isPresent();
+        assertThat(accountRepository.findByEmail("demo@semgravio.com")).isPresent();
 
         // 1. /authorize 无 cookie → 302 dev-login（透传 client_id/redirect_uri/state/nonce）
         MvcResult auth = mvc.perform(get("/authorize")
@@ -415,25 +415,25 @@ Expected: FAIL（`/api/auth/dev-login` 不存在 → 404）。
 
 - [ ] **Step 3: 实现 DevLoginAppService**
 
-Create `src/main/java/com/aieducenter/aieducenteridentity/sso/application/DevLoginAppService.java`:
+Create `src/main/java/com/semgravio/semgravioidentity/sso/application/DevLoginAppService.java`:
 
 ```java
-package com.aieducenter.aieducenteridentity.sso.application;
+package com.semgravio.semgravioidentity.sso.application;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.aieducenter.aieducenteridentity.account.domain.aggregate.Account;
-import com.aieducenter.aieducenteridentity.account.domain.aggregate.Profile;
-import com.aieducenter.aieducenteridentity.account.domain.repository.AccountRepository;
-import com.aieducenter.aieducenteridentity.account.domain.repository.ProfileRepository;
-import com.aieducenter.aieducenteridentity.sso.application.dto.SsoLoginResult;
-import com.aieducenter.aieducenteridentity.sso.config.SsoProperties;
-import com.aieducenter.aieducenteridentity.sso.domain.client.SsoClient;
-import com.aieducenter.aieducenteridentity.sso.domain.client.SsoClientValidationService;
-import com.aieducenter.aieducenteridentity.sso.domain.session.SsoSession;
-import com.aieducenter.aieducenteridentity.sso.domain.session.SsoSessionRepository;
+import com.semgravio.semgravioidentity.account.domain.aggregate.Account;
+import com.semgravio.semgravioidentity.account.domain.aggregate.Profile;
+import com.semgravio.semgravioidentity.account.domain.repository.AccountRepository;
+import com.semgravio.semgravioidentity.account.domain.repository.ProfileRepository;
+import com.semgravio.semgravioidentity.sso.application.dto.SsoLoginResult;
+import com.semgravio.semgravioidentity.sso.config.SsoProperties;
+import com.semgravio.semgravioidentity.sso.domain.client.SsoClient;
+import com.semgravio.semgravioidentity.sso.domain.client.SsoClientValidationService;
+import com.semgravio.semgravioidentity.sso.domain.session.SsoSession;
+import com.semgravio.semgravioidentity.sso.domain.session.SsoSessionRepository;
 
 /**
  * dev 一键登应用服务（issue #16）——镜像 {@link SsoLoginAppService#loginByPassword}，但免认证、
@@ -467,7 +467,7 @@ public class DevLoginAppService {
     /**
      * 以预置测试账号建 SSO 会话 + 发 code。
      *
-     * @throws com.aieducenter.aieducenteridentity.sso.domain.error.OidcException client/redirect_uri 无效（400）
+     * @throws com.semgravio.semgravioidentity.sso.domain.error.OidcException client/redirect_uri 无效（400）
      */
     @Transactional
     public SsoLoginResult loginAsDevAccount(String clientId, String redirectUri, String state, String nonce) {
@@ -491,10 +491,10 @@ public class DevLoginAppService {
 
 - [ ] **Step 4: 实现 DevLoginController**
 
-Create `src/main/java/com/aieducenter/aieducenteridentity/sso/endpoints/controller/DevLoginController.java`:
+Create `src/main/java/com/semgravio/semgravioidentity/sso/endpoints/controller/DevLoginController.java`:
 
 ```java
-package com.aieducenter.aieducenteridentity.sso.endpoints.controller;
+package com.semgravio.semgravioidentity.sso.endpoints.controller;
 
 import java.net.URI;
 
@@ -507,9 +507,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.aieducenter.aieducenteridentity.sso.application.DevLoginAppService;
-import com.aieducenter.aieducenteridentity.sso.application.dto.SsoLoginResult;
-import com.aieducenter.aieducenteridentity.sso.endpoints.web.SsoCookieService;
+import com.semgravio.semgravioidentity.sso.application.DevLoginAppService;
+import com.semgravio.semgravioidentity.sso.application.dto.SsoLoginResult;
+import com.semgravio.semgravioidentity.sso.endpoints.web.SsoCookieService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -562,9 +562,9 @@ Expected: BUILD SUCCESS，全部测试通过（含既有 `SsoFlowIntegrationTest
 - [ ] **Step 7: 提交**
 
 ```bash
-git add src/main/java/com/aieducenter/aieducenteridentity/sso/application/DevLoginAppService.java \
-        src/main/java/com/aieducenter/aieducenteridentity/sso/endpoints/controller/DevLoginController.java \
-        src/test/java/com/aieducenter/aieducenteridentity/sso/endpoints/DevLoginFlowIntegrationTest.java
+git add src/main/java/com/semgravio/semgravioidentity/sso/application/DevLoginAppService.java \
+        src/main/java/com/semgravio/semgravioidentity/sso/endpoints/controller/DevLoginController.java \
+        src/test/java/com/semgravio/semgravioidentity/sso/endpoints/DevLoginFlowIntegrationTest.java
 git commit -m "feat(#16): dev 一键登端点 /api/auth/dev-login（镜像 /api/auth/login、开关门控）"
 ```
 
@@ -586,7 +586,7 @@ git commit -m "feat(#16): dev 一键登端点 /api/auth/dev-login（镜像 /api/
 ```yaml
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/aieducenter
+    url: jdbc:postgresql://localhost:5432/semgravio
     username: aiedu
     password: dev123
   data:
@@ -610,7 +610,7 @@ identity:
 
 - [ ] **Step 2: 验证 local profile 上下文起得来**
 
-Run: `mvn -o test -Dtest=AieducenterIdentityApplicationTest -Dspring.profiles.active=local -q`（仅冒烟，若本地无 PG/Redis 可跳过此步，依赖 Task 3 的集成测试已覆盖 dev-login 路径）
+Run: `mvn -o test -Dtest=SemgravioIdentityApplicationTest -Dspring.profiles.active=local -q`（仅冒烟，若本地无 PG/Redis 可跳过此步，依赖 Task 3 的集成测试已覆盖 dev-login 路径）
 Expected: 不报配置绑定错。
 
 - [ ] **Step 3: 提交**
@@ -644,7 +644,7 @@ services:
     image: postgres:16-alpine
     container_name: identity-postgres
     environment:
-      POSTGRES_DB: aieducenter
+      POSTGRES_DB: semgravio
       POSTGRES_USER: aiedu
       POSTGRES_PASSWORD: dev123
     ports:
@@ -715,7 +715,7 @@ Create `docs/guide/local-sso-debugging.md`:
 ## 验证首次登录 + 二次免登
 
 1. 浏览器开 `http://demo.localhost:3000` → 未登录页（显示「登录」按钮）。
-2. 点「登录」→ 跳 identity `/authorize`（无 SSO cookie）→ 跳 dev 一键登 → 自动登预置账号 `demo@aieducenter.com / demo12345` → 发 code → 回 demo `/auth/callback` → BFF 服务端换 token、种 `demo_session` → 回首页显示用户。
+2. 点「登录」→ 跳 identity `/authorize`（无 SSO cookie）→ 跳 dev 一键登 → 自动登预置账号 `demo@semgravio.com / demo12345` → 发 code → 回 demo `/auth/callback` → BFF 服务端换 token、种 `demo_session` → 回首页显示用户。
 3. **二次免登**：清 demo 业务 cookie（或换无痕窗口重跑一次完整登录后），再点「登录」→ 这次 identity 有 SSO cookie → 直接发 code → 无感进入（没再登一次）。
 
 ## 常见排错
@@ -739,10 +739,10 @@ git commit -m "chore(#16): .localhost 本地联调基建（docker-compose + dev-
 **Files:**
 - Create: `demo/demo-backend/pom.xml`
 - Create: `demo/demo-backend/.gitignore`
-- Create: `demo/demo-backend/src/main/java/com/aieducenter/demobff/DemoBffApplication.java`
+- Create: `demo/demo-backend/src/main/java/com/semgravio/demobff/DemoBffApplication.java`
 - Create: `demo/demo-backend/src/main/resources/application.yml`
 - Create: `demo/demo-backend/src/main/resources/application-local.yml`
-- Create: `demo/demo-backend/src/main/java/com/aieducenter/demobff/config/SsoProperties.java`
+- Create: `demo/demo-backend/src/main/java/com/semgravio/demobff/config/SsoProperties.java`
 
 **Interfaces:**
 - Produces: 可 `mvn compile` 的 demo-backend 工程；`SsoProperties`（`sso.*`）绑 issuer/clientId/secret/redirectUri/scope/appBaseUrl。
@@ -765,8 +765,8 @@ Create `demo/demo-backend/pom.xml`（cartisan-boot 父、剪到只留 web + nimb
         <version>0.1.0-SNAPSHOT</version>
     </parent>
 
-    <groupId>com.aieducenter</groupId>
-    <artifactId>aieducenter-demo-bff</artifactId>
+    <groupId>com.semgravio</groupId>
+    <artifactId>semgravio-demo-bff</artifactId>
     <version>1.0.0-SNAPSHOT</version>
 
     <properties>
@@ -836,7 +836,7 @@ Create `demo/demo-backend/pom.xml`（cartisan-boot 父、剪到只留 web + nimb
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>3.4.1</version>
                 <configuration>
-                    <mainClass>com.aieducenter.demobff.DemoBffApplication</mainClass>
+                    <mainClass>com.semgravio.demobff.DemoBffApplication</mainClass>
                     <jvmArguments>--enable-preview</jvmArguments>
                 </configuration>
             </plugin>
@@ -847,10 +847,10 @@ Create `demo/demo-backend/pom.xml`（cartisan-boot 父、剪到只留 web + nimb
 
 - [ ] **Step 2: 写主类 + .gitignore**
 
-Create `demo/demo-backend/src/main/java/com/aieducenter/demobff/DemoBffApplication.java`:
+Create `demo/demo-backend/src/main/java/com/semgravio/demobff/DemoBffApplication.java`:
 
 ```java
-package com.aieducenter.demobff;
+package com.semgravio.demobff;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -880,10 +880,10 @@ target/
 
 - [ ] **Step 3: 写 SsoProperties**
 
-Create `demo/demo-backend/src/main/java/com/aieducenter/demobff/config/SsoProperties.java`:
+Create `demo/demo-backend/src/main/java/com/semgravio/demobff/config/SsoProperties.java`:
 
 ```java
-package com.aieducenter.demobff.config;
+package com.semgravio.demobff.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
@@ -933,7 +933,7 @@ server:
 
 spring:
   application:
-    name: aieducenter-demo-bff
+    name: semgravio-demo-bff
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:local}
 
@@ -973,11 +973,11 @@ git commit -m "feat(#16): demo-backend BFF 脚手架 + SSO 配置"
 ## Task 7: BFF 会话存储 + OidcClient（OIDC 客户端核心）
 
 **Files:**
-- Create: `demo/demo-backend/src/main/java/com/aieducenter/demobff/sso/BffSession.java`
-- Create: `demo/demo-backend/src/main/java/com/aieducenter/demobff/sso/BffSessionStore.java`
-- Create: `demo/demo-backend/src/main/java/com/aieducenter/demobff/sso/TokenResponse.java`
-- Create: `demo/demo-backend/src/main/java/com/aieducenter/demobff/sso/OidcClient.java`
-- Create: `demo/demo-backend/src/test/java/com/aieducenter/demobff/sso/OidcClientTest.java`
+- Create: `demo/demo-backend/src/main/java/com/semgravio/demobff/sso/BffSession.java`
+- Create: `demo/demo-backend/src/main/java/com/semgravio/demobff/sso/BffSessionStore.java`
+- Create: `demo/demo-backend/src/main/java/com/semgravio/demobff/sso/TokenResponse.java`
+- Create: `demo/demo-backend/src/main/java/com/semgravio/demobff/sso/OidcClient.java`
+- Create: `demo/demo-backend/src/test/java/com/semgravio/demobff/sso/OidcClientTest.java`
 
 **Interfaces:**
 - Consumes: `SsoProperties`（Task 6）、Spring `RestClient.Builder`（自动配置）。
@@ -989,10 +989,10 @@ git commit -m "feat(#16): demo-backend BFF 脚手架 + SSO 配置"
 
 - [ ] **Step 1: 写失败测试**
 
-Create `demo/demo-backend/src/test/java/com/aieducenter/demobff/sso/OidcClientTest.java`:
+Create `demo/demo-backend/src/test/java/com/semgravio/demobff/sso/OidcClientTest.java`:
 
 ```java
-package com.aieducenter.demobff.sso;
+package com.semgravio.demobff.sso;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.client.ExpectedCount.once;
@@ -1004,7 +1004,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 
-import com.aieducenter.demobff.config.SsoProperties;
+import com.semgravio.demobff.config.SsoProperties;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.PlainJWT;
 
@@ -1074,10 +1074,10 @@ Expected: FAIL（类不存在，编译失败）。
 
 - [ ] **Step 3: 实现 BffSession + BffSessionStore + TokenResponse**
 
-Create `demo/demo-backend/src/main/java/com/aieducenter/demobff/sso/BffSession.java`:
+Create `demo/demo-backend/src/main/java/com/semgravio/demobff/sso/BffSession.java`:
 
 ```java
-package com.aieducenter.demobff.sso;
+package com.semgravio.demobff.sso;
 
 /**
  * BFF 服务端会话——存换到的 token 三件套（浏览器永不接触）。
@@ -1086,10 +1086,10 @@ public record BffSession(String accessToken, String idToken, String refreshToken
 }
 ```
 
-Create `demo/demo-backend/src/main/java/com/aieducenter/demobff/sso/BffSessionStore.java`:
+Create `demo/demo-backend/src/main/java/com/semgravio/demobff/sso/BffSessionStore.java`:
 
 ```java
-package com.aieducenter.demobff.sso;
+package com.semgravio.demobff.sso;
 
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -1118,10 +1118,10 @@ public class BffSessionStore {
 }
 ```
 
-Create `demo/demo-backend/src/main/java/com/aieducenter/demobff/sso/TokenResponse.java`:
+Create `demo/demo-backend/src/main/java/com/semgravio/demobff/sso/TokenResponse.java`:
 
 ```java
-package com.aieducenter.demobff.sso;
+package com.semgravio.demobff.sso;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -1140,10 +1140,10 @@ public record TokenResponse(
 
 - [ ] **Step 4: 实现 OidcClient**
 
-Create `demo/demo-backend/src/main/java/com/aieducenter/demobff/sso/OidcClient.java`:
+Create `demo/demo-backend/src/main/java/com/semgravio/demobff/sso/OidcClient.java`:
 
 ```java
-package com.aieducenter.demobff.sso;
+package com.semgravio.demobff.sso;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -1157,7 +1157,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClient.Builder;
 
-import com.aieducenter.demobff.config.SsoProperties;
+import com.semgravio.demobff.config.SsoProperties;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.JWTParser;
 
@@ -1250,10 +1250,10 @@ git commit -m "feat(#16): demo-backend 内存会话 + OIDC 客户端（authorize
 ## Task 8: AuthController + MeController（BFF 端点）
 
 **Files:**
-- Create: `demo/demo-backend/src/main/java/com/aieducenter/demobff/sso/AuthController.java`
-- Create: `demo/demo-backend/src/main/java/com/aieducenter/demobff/sso/MeController.java`
-- Create: `demo/demo-backend/src/test/java/com/aieducenter/demobff/sso/AuthControllerTest.java`
-- Create: `demo/demo-backend/src/test/java/com/aieducenter/demobff/sso/MeControllerTest.java`
+- Create: `demo/demo-backend/src/main/java/com/semgravio/demobff/sso/AuthController.java`
+- Create: `demo/demo-backend/src/main/java/com/semgravio/demobff/sso/MeController.java`
+- Create: `demo/demo-backend/src/test/java/com/semgravio/demobff/sso/AuthControllerTest.java`
+- Create: `demo/demo-backend/src/test/java/com/semgravio/demobff/sso/MeControllerTest.java`
 
 **Interfaces:**
 - Consumes: `OidcClient`、`BffSessionStore`、`SsoProperties`（Task 6/7）。
@@ -1265,10 +1265,10 @@ git commit -m "feat(#16): demo-backend 内存会话 + OIDC 客户端（authorize
 
 - [ ] **Step 1: 写失败测试 AuthControllerTest**
 
-Create `demo/demo-backend/src/test/java/com/aieducenter/demobff/sso/AuthControllerTest.java`:
+Create `demo/demo-backend/src/test/java/com/semgravio/demobff/sso/AuthControllerTest.java`:
 
 ```java
-package com.aieducenter.demobff.sso;
+package com.semgravio.demobff.sso;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -1289,7 +1289,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import com.aieducenter.demobff.config.SsoProperties;
+import com.semgravio.demobff.config.SsoProperties;
 
 import jakarta.servlet.http.Cookie;
 
@@ -1364,10 +1364,10 @@ class AuthControllerTest {
 
 - [ ] **Step 2: 写失败测试 MeControllerTest**
 
-Create `demo/demo-backend/src/test/java/com/aieducenter/demobff/sso/MeControllerTest.java`:
+Create `demo/demo-backend/src/test/java/com/semgravio/demobff/sso/MeControllerTest.java`:
 
 ```java
-package com.aieducenter.demobff.sso;
+package com.semgravio.demobff.sso;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -1426,10 +1426,10 @@ Expected: FAIL（控制器不存在）。
 
 - [ ] **Step 4: 实现 AuthController**
 
-Create `demo/demo-backend/src/main/java/com/aieducenter/demobff/sso/AuthController.java`:
+Create `demo/demo-backend/src/main/java/com/semgravio/demobff/sso/AuthController.java`:
 
 ```java
-package com.aieducenter.demobff.sso;
+package com.semgravio.demobff.sso;
 
 import java.net.URI;
 import java.util.Map;
@@ -1447,7 +1447,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.aieducenter.demobff.config.SsoProperties;
+import com.semgravio.demobff.config.SsoProperties;
 
 /**
  * demo BFF 认证端点（issue #16）：/auth/login 发起、/auth/callback 换 token+种业务 cookie、/auth/logout。
@@ -1530,10 +1530,10 @@ public class AuthController {
 
 - [ ] **Step 5: 实现 MeController**
 
-Create `demo/demo-backend/src/main/java/com/aieducenter/demobff/sso/MeController.java`:
+Create `demo/demo-backend/src/main/java/com/semgravio/demobff/sso/MeController.java`:
 
 ```java
-package com.aieducenter.demobff.sso;
+package com.semgravio.demobff.sso;
 
 import java.util.Map;
 
@@ -1616,7 +1616,7 @@ Create `demo/demo-web/package.json`:
 
 ```json
 {
-  "name": "aieducenter-demo-web",
+  "name": "semgravio-demo-web",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -1812,7 +1812,7 @@ git commit -m "feat(#16): demo-web 显示页（/api/me + 登录/登出，Next re
 
 Run:
 ```bash
-gh issue create --repo ZhangColin/aieducenter-identity-web \
+gh issue create --repo ZhangColin/semgravio-identity-web \
   --title "SSO 登录页：与 identity 后端契约对齐（dev 一键登兜底已就位）" \
   --body "$(cat <<'EOF'
 identity 后端 #14/#15/#16 已把 SSO 闭环收敛到这套契约。本 issue 把 identity-web 登录页要对接的点交代清楚，等前端开工照此接。
@@ -1824,7 +1824,7 @@ identity 后端 #14/#15/#16 已把 SSO 闭环收敛到这套契约。本 issue �
 - \`/token\`：code 换 access/id/refresh（机机，带 client_secret，前端不调）。
 
 ## 本地联调（identity-web 缺席期间的兜底）
-- 本期（#16）在 identity 加了 dev 一键登 \`GET /api/auth/dev-login\`，仅 \`identity.sso.dev-login.enabled=true\`（local profile）注册。\`/authorize\` 无 cookie 时跳它，自动登预置测试账号 \`demo@aieducenter.com / demo12345\`，让闭环现在就能跑通。
+- 本期（#16）在 identity 加了 dev 一键登 \`GET /api/auth/dev-login\`，仅 \`identity.sso.dev-login.enabled=true\`（local profile）注册。\`/authorize\` 无 cookie 时跳它，自动登预置测试账号 \`demo@semgravio.com / demo12345\`，让闭环现在就能跑通。
 - identity-web 登录页落地后，只需把 local profile 的 \`identity.sso.login-page-url\` 从 dev-login 换回登录页 URL（prod 本就指向登录页）。即：identity-web 替换 dev-login，零返工。
 
 ## identity-web 登录页要做
@@ -1832,7 +1832,7 @@ identity 后端 #14/#15/#16 已把 SSO 闭环收敛到这套契约。本 issue �
 2. 提交 \`POST /api/auth/login\`（上字段）；失败留页显示，不回业务应用。
 3. 登录成功由 identity 302 回 redirect_uri（identity-web 自己不用换 token）。
 
-参考：demo 消费方（\`aieducenter-identity/demo/\`）+ \`docs/guide/local-sso-debugging.md\`。
+参考：demo 消费方（\`semgravio-identity/demo/\`）+ \`docs/guide/local-sso-debugging.md\`。
 EOF
 )"
 ```
@@ -1851,7 +1851,7 @@ Expected: 输出新 issue URL（记下来）。
 ```
 - **本地**：`.localhost` 多域——浏览器自动解析到 127.0.0.1 + 当 secure context（免改 hosts、免证书）。端口：identity `identity.localhost:10001`、demo BFF `demo.localhost:10010`、demo-web `demo.localhost:3000`（Next 代理 `/api`·`/auth`→BFF）。一键起：`./dev-up.sh`（PG+Redis+三进程命令）；手册 `docs/guide/local-sso-debugging.md`。
 - **demo 消费方**（仓内 `demo/`：`demo-backend` BFF + `demo-web`）：发起 /authorize + 收 callback + BFF 换 token（内存存、浏览器不接触）+ 显示用户。一身三任：**测试必需品 + 对接活示例 + 演示开发姿态**。
-- **dev 一键登**（identity-web 登录页缺席时的兜底，#16）：\`identity.sso.dev-login.enabled=true\`（local profile）时，\`/authorize\` 无 cookie 跳 \`/api/auth/dev-login\`，自动登预置账号 \`demo@aieducenter.com\`、发 code。仍走正常 code→/token 流程（不直接发 token）。identity-web 登录页落地后，把 local 的 \`login-page-url\` 换回登录页即可。
+- **dev 一键登**（identity-web 登录页缺席时的兜底，#16）：\`identity.sso.dev-login.enabled=true\`（local profile）时，\`/authorize\` 无 cookie 跳 \`/api/auth/dev-login\`，自动登预置账号 \`demo@semgravio.com\`、发 code。仍走正常 code→/token 流程（不直接发 token）。identity-web 登录页落地后，把 local 的 \`login-page-url\` 换回登录页即可。
 ```
 
 - [ ] **Step 3: 提交**
@@ -1884,7 +1884,7 @@ Expected: 无错。
 
 按 `docs/guide/local-sso-debugging.md`：
 1. `./dev-up.sh` + 三终端起 identity / demo-backend / demo-web。
-2. 访问 `http://demo.localhost:3000` → 点登录 → 自动经 dev-login → 回首页显示 `demo@aieducenter.com` 用户。
+2. 访问 `http://demo.localhost:3000` → 点登录 → 自动经 dev-login → 回首页显示 `demo@semgravio.com` 用户。
 3. **二次免登**：再点登录 → identity 有 SSO cookie → 直接发 code → 无感进入。
 
 - [ ] **Step 5: 关闭 issue #16（验证通过后）**

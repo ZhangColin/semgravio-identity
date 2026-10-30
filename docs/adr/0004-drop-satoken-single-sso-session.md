@@ -48,5 +48,5 @@
 ## 关联
 
 - [ADR-0003](0003-sso-satoken-self-built-oidc.md)（OIDC 端点仍自搭，仅「会话引擎继续 Sa-Token」被本 ADR 取代）
-- [CONTEXT.md](../../CONTEXT.md)
+- [GLOSSARY.md](../../GLOSSARY.md)
 - 架构仓库 `map.md`、`architecture.md §6.1`、`integration-flows.md §1`

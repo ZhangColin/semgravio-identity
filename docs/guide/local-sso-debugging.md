@@ -23,7 +23,7 @@ SSO cookie 是 host-only（`identity.localhost`），:10001 与 :10002 跨端口
 ## 验证首次登录 + 二次免登
 
 1. 浏览器开 `http://demo.localhost:3000` → 未登录页（显示「登录」按钮）。
-2. 点「登录」→ 跳 identity `/authorize`（无 SSO cookie）→ 302 到 identity-web 登录页（透传 `client_id`/`redirect_uri`/`state`）→ 用自己注册的测试账号（如 `demo@aieducenter.com / demo12345`，**需先经注册流程建号**——dev 一键登 seeder 已随 #50 移除）登录 → 种 SSO cookie → 跳回 `/authorize` 发 code → 回 demo `/auth/callback` → BFF 服务端换 token、种 `demo_session` → 回首页显示用户。
+2. 点「登录」→ 跳 identity `/authorize`（无 SSO cookie）→ 302 到 identity-web 登录页（透传 `client_id`/`redirect_uri`/`state`）→ 用自己注册的测试账号（如 `demo@semgravio.com / demo12345`，**需先经注册流程建号**——dev 一键登 seeder 已随 #50 移除）登录 → 种 SSO cookie → 跳回 `/authorize` 发 code → 回 demo `/auth/callback` → BFF 服务端换 token、种 `demo_session` → 回首页显示用户。
 3. **二次免登**：清 demo 业务 cookie（或换无痕窗口重跑一次完整登录后），再点「登录」→ 这次 identity 有 SSO cookie → 直接发 code → 无感进入（没再登一次）。
 
 ## 验证登出（issue #38）

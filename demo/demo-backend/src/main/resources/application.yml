@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: aieducenter-demo-bff
+    name: semgravio-demo-bff
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:local}
 

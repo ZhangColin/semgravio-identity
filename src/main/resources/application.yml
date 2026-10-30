@@ -3,12 +3,12 @@ server:
 
 spring:
   application:
-    name: aieducenter-identity
+    name: semgravio-identity
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:local}
   flyway:
     enabled: true
-    table: aieducenter-identity_flyway_schema_history
+    table: semgravio-identity_flyway_schema_history
     baseline-on-migrate: true
     baseline-version: "0"
     locations: classpath:db/migration
@@ -48,7 +48,7 @@ identity:
       refresh-ttl-seconds: 604800
       key-id: identity-rs256-v1
       audiences:
-        - aieducenter-identity
+        - semgravio-identity
   # SSO 配置（ADR-0004 / issue #15）——一套 SSO 会话（cookie+Redis+双超时）+ 授权码 + app-registry 远程解析
   sso:
     session-idle-seconds: 2592000      # 闲置超时 30 天（Redis key TTL 滑动）

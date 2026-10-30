@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/aieducenter
+    url: jdbc:postgresql://localhost:5432/semgravio
     username: aiedu
     password: dev123
   data:
@@ -37,7 +37,7 @@ identity:
       # 而「/token 按 client_id 覆盖 aud」是 identity Phase 2 未落项（见 JwtTokenProperties javadoc）。
       # 落地前把消费方 client_id 追加进 audiences 兜底；列表整体替换语义，保留原值。
       audiences:
-        - aieducenter-identity
+        - semgravio-identity
         - IHvjUEC-ratYeIBRLPEDvEGcueVIDCNB0L9O7vKS06o
   sso:
     # local 跑 http://*.localhost：Safari/Firefox 不豁免 Secure-over-http（仅 Chrome/Edge 豁免），
@@ -48,6 +48,6 @@ identity:
     login-page-url: http://identity.localhost:10002/login
     # 浏览器类端点出错时 302 跳 identity-web 兜底页（:10002 /error，ADR-0006）
     error-page-url: http://identity.localhost:10002/error
-    # app-registry 本地端口（../aieducenter-app-registry 本地起在 :8088，见其 application.yml server.port）
+    # app-registry 本地端口（../semgravio-app-registry 本地起在 :8088，见其 application.yml server.port）
     app-registry:
       base-url: http://localhost:8088

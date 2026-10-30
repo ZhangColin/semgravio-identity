@@ -26,4 +26,4 @@
 - 升级位：若评估后发现 Sa-Token oidc 覆盖太薄、自写成本超预期，再回方案 ③（Spring Authorization Server）。
 
 ## 关联
-[ADR-0002](0002-token-format-jwt.md) · [CONTEXT.md](../../CONTEXT.md) OIDC 端点 · 平台 [architecture.md §6.1](../../../../aieducenter-architecture/docs/architecture.md)
+[ADR-0002](0002-token-format-jwt.md) · [GLOSSARY.md](../../GLOSSARY.md) OIDC 端点 · 平台 [architecture.md §6.1](../../../../semgravio-architecture/docs/architecture.md)

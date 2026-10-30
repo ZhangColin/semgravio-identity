@@ -11,8 +11,8 @@
         <version>0.1.0-SNAPSHOT</version>
     </parent>
 
-    <groupId>com.aieducenter</groupId>
-    <artifactId>aieducenter-demo-bff</artifactId>
+    <groupId>com.semgravio</groupId>
+    <artifactId>semgravio-demo-bff</artifactId>
     <version>1.0.0-SNAPSHOT</version>
 
     <properties>
@@ -82,7 +82,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>3.4.1</version>
                 <configuration>
-                    <mainClass>com.aieducenter.demobff.DemoBffApplication</mainClass>
+                    <mainClass>com.semgravio.demobff.DemoBffApplication</mainClass>
                     <jvmArguments>--enable-preview</jvmArguments>
                 </configuration>
             </plugin>

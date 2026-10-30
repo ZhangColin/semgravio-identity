@@ -15,7 +15,7 @@ logging.level.root: INFO
 identity:
   token:
     jwt:
-      # issuer 是环境事实（计划生产域名 https://identity.aieducenter.com 只活在 env 值里，不进配置文件）：
+      # issuer 是环境事实（计划生产域名 https://identity.semgravio.com 只活在 env 值里，不进配置文件）：
       # 裸 ${} 无默认，env 缺失时未解析字面量由 EnvironmentUrlGuard 启动拦截（fail-fast，#74）
       issuer: ${IDENTITY_TOKEN_ISSUER}
   sso:

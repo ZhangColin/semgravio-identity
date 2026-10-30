@@ -1,4 +1,4 @@
-# 起步包 — aieducenter-identity（身份服务 / 平台 IdP）
+# 起步包 — semgravio-identity（身份服务 / 平台 IdP）
 
 > 用途：拿到这个项目走 matt/superpowers 开发时的**起步上下文**。本文是指针 + 复用 + 净新增 + 待决，**不是设计**。
 > 角色：基础能力层 · 终端用户身份基座 / 平台集中式身份提供者(IdP)。被所有业务应用消费（直调用户接口 + SSO 接入）。无 UI（登录页在 identity-web）。

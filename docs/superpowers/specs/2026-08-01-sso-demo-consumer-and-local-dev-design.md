@@ -9,7 +9,7 @@ identity 后端的 SSO 闭环已经建到 #15：`/authorize` 状态机、`/api/a
 
 1. 一个**消费方参考实现**——证明「标准 cartisan-boot 前后端分离项目能接 SSO」，别的业务项目照抄即可。
 2. **本地联调基建**——`identity.localhost` + `demo.localhost` 多域，免改 hosts、免证书，浏览器真跑通。
-3. **dev 一键登**——identity-web 登录页还没建（在 `aieducenter-identity-web#1`，等本服务先收敛契约），需要一个 dev 侧入口让完整闭环现在就能跑通、反复联调。
+3. **dev 一键登**——identity-web 登录页还没建（在 `semgravio-identity-web#1`，等本服务先收敛契约），需要一个 dev 侧入口让完整闭环现在就能跑通、反复联调。
 
 identity-web 本期**等**——不催它动，只在收尾时给它发协调 issue。
 
@@ -30,10 +30,10 @@ identity-web 本期**等**——不催它动，只在收尾时给它发协调 is
 
 ## 总体形状
 
-monorepo：在 `aieducenter-identity` 仓内新增 `demo/` 子目录（两个独立子项目，根 pom **不**收它们），加本地基建。
+monorepo：在 `semgravio-identity` 仓内新增 `demo/` 子目录（两个独立子项目，根 pom **不**收它们），加本地基建。
 
 ```
-aieducenter-identity/
+semgravio-identity/
 ├── src/...                                  # 现有 identity IdP 后端
 ├── demo/                                    # 【新增】demo 消费方
 │   ├── demo-backend/                        # 脚手架 service 当 BFF（OIDC 消费方）
@@ -67,7 +67,7 @@ identity 后端本期新增两小块（都在现有 `sso` 上下文内）：
 #### 1.2 dev 测试账号 seeder（`DevAccountSeeder`）
 
 - `ApplicationRunner` / `@PostConstruct`，`@Profile(local)`。
-- 启动时若账号不存在则建：`email=demo@aieducenter.com`、`password=demo12345`（BCrypt hash）、状态 active；profile（nickname「Demo 用户」）一并建。
+- 启动时若账号不存在则建：`email=demo@semgravio.com`、`password=demo12345`（BCrypt hash）、状态 active；profile（nickname「Demo 用户」）一并建。
 - 已存在则跳过（幂等）。dev-login 就登这个 userId。
 - **不放 Flyway 迁移**（迁移会进 prod）；用 profile-gated seeder 只在 local 跑。
 
@@ -102,7 +102,7 @@ app:
   base-url: http://demo.localhost:3000             # 前端地址（回跳用）
 ```
 
-**端点**（`AuthController` + `MeController`，包 `com.aieducenter.demobackend.sso`）：
+**端点**（`AuthController` + `MeController`，包 `com.semgravio.demobackend.sso`）：
 
 | 方法 路径 | 干什么 |
 |---|---|
@@ -190,7 +190,7 @@ demo /auth/logout → 删 BFF 内存会话 + 清 demo_session cookie → 302 回
 - **不接真 app-registry**——继续用 stub client（`demo-client`）；真接入在 #6。
 - **demo 不产品化**——内存会话（重启丢）、无 DB、无部署脚本（不需要部署 demo 到 prod）。
 - **不做 RP-initiated logout / 完整 SLO**——#19；本期 demo 登出只清业务会话。
-- **identity-web 不动工**——收尾发协调 issue（`aieducenter-identity-web`），把契约交代清楚等它接。
+- **identity-web 不动工**——收尾发协调 issue（`semgravio-identity-web`），把契约交代清楚等它接。
 
 ## 验收对照（issue #16）
 
@@ -204,5 +204,5 @@ demo /auth/logout → 删 BFF 内存会话 + 清 demo_session cookie → 302 回
 
 ## 收尾动作
 
-- 给 `aieducenter-identity-web` 发 issue：交代 identity 这边契约——`/authorize` 状态机（有/无 cookie）、`/api/auth/login` 入参（credentials + authorize 参数）、SSO cookie（名/属性/域）、local profile 下 `/authorize` 跳转目标会从 dev-login 换成 identity-web 登录页（届时 `login-page-url` 配回登录页）。不催进度。
+- 给 `semgravio-identity-web` 发 issue：交代 identity 这边契约——`/authorize` 状态机（有/无 cookie）、`/api/auth/login` 入参（credentials + authorize 参数）、SSO cookie（名/属性/域）、local profile 下 `/authorize` 跳转目标会从 dev-login 换成 identity-web 登录页（届时 `login-page-url` 配回登录页）。不催进度。
 - 必要时更新本项目 `CONTEXT.md`「开发测试」段落（.localhost 端口分工、dev-login 兜底说明）。

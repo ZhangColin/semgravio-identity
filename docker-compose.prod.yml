@@ -1,7 +1,7 @@
 services:
   app:
     build: .
-    container_name: aieducenter-identity
+    container_name: semgravio-identity
     restart: unless-stopped
     env_file:
       - .env.production

@@ -40,10 +40,10 @@ identity 后端是纯 API（`src/main/resources` 无 `static/`/`templates/`）�
 
 - **identity-web（跨仓，发 issue）**：新增 `/error` 路由 + 兜底页组件。
 - **identity 本仓**：`AuthorizeController`/`LogoutController` 各加局部 `@ExceptionHandler`；`LogoutController` 失败分支改跳兜底页；`RemoteSsoClientRepositoryAdapter` 抖动降级路径改 `temporarily_unavailable`；新增配置 `identity.sso.error-page-url`。
-- [CONTEXT.md](../../CONTEXT.md)「错误处理（OIDC 标准）」段同步修订为分流表述。
+- [GLOSSARY.md](../../GLOSSARY.md)「错误处理（OIDC 标准）」段同步修订为分流表述。
 - #33 收口（A 浏览器兜底页 + B 错误码语义都在本 ADR 范围）。
 
 ## 关联
 
-- [CONTEXT.md](../../CONTEXT.md)（错误处理 / app-registry 抖动降级）
+- [GLOSSARY.md](../../GLOSSARY.md)（错误处理 / app-registry 抖动降级）
 - #33、#32（抖动降级引入）

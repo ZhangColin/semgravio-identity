@@ -5,7 +5,7 @@ services:
     image: postgres:16-alpine
     container_name: identity-postgres
     environment:
-      POSTGRES_DB: aieducenter
+      POSTGRES_DB: semgravio
       POSTGRES_USER: aiedu
       POSTGRES_PASSWORD: dev123
     ports:

@@ -2,12 +2,12 @@
 # 反馈回路（diagnosing-bugs Phase 1）：以 admin-console 凭证签名调用
 # GET /api/account?page=0&size=10，断言响应不是 403 "管理后台 is not authorized"。
 #
-# 凭证从 aieducenter-admin/src/main/resources/application-local.yml 读取（不落脚本）。
+# 凭证从 semgravio-admin/src/main/resources/application-local.yml 读取（不落脚本）。
 # 用法：./scripts/repro-management-gate.sh [baseUrl]   # 默认 http://localhost:10001
 set -euo pipefail
 
 BASE_URL="${1:-http://localhost:10001}"
-ADMIN_LOCAL_YML="$HOME/workspace/aieducenter-admin/src/main/resources/application-local.yml"
+ADMIN_LOCAL_YML="$HOME/workspace/semgravio-admin/src/main/resources/application-local.yml"
 KEY="admin-console"
 SECRET=$(grep 'api-secret:' "$ADMIN_LOCAL_YML" | head -1 | sed 's/.*api-secret:[[:space:]]*//')
 

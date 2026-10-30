@@ -1,16 +1,16 @@
-# 从 aieducenter-studio 迁移账号基线（Phase 0 指南）
+# 从 semgravio-studio 迁移账号基线（Phase 0 指南）
 
 > 用途：Phase 0 的开工清单——把 studio 里**账号相关**的可用代码搬到本服务、按本轮决策改造、修 4 个必修 bug。
 > 前提：studio = 「前台消费应用」，本服务 = 「全平台身份基座」。**只搬账号相关，别把消费应用的业务逻辑带进来。**
-> 相关决策：[ADR-0001](adr/0001-account-credential-model.md)（Account 模型）、[ADR-0002](adr/0002-token-format-jwt.md)（token=JWT）、[ADR-0003](adr/0003-sso-satoken-self-built-oidc.md)（Sa-Token 自搭 OIDC）、[CONTEXT.md](../CONTEXT.md)。
+> 相关决策：[ADR-0001](adr/0001-account-credential-model.md)（Account 模型）、[ADR-0002](adr/0002-token-format-jwt.md)（token=JWT）、[ADR-0003](adr/0003-sso-satoken-self-built-oidc.md)（Sa-Token 自搭 OIDC）、[GLOSSARY.md](../GLOSSARY.md)。
 
 ## 包名迁移
-studio 用 `com.aieducenter.account` / `com.aieducenter.verification`；本服务基础包是 `com.aieducenter.aieducenteridentity`。搬过来改包名：
+studio 用 `com.semgravio.account` / `com.semgravio.verification`；本服务基础包是 `com.semgravio.semgravioidentity`。搬过来改包名：
 
 | studio | 本服务 |
 |---|---|
-| `com.aieducenter.account.*` | `com.aieducenter.aieducenteridentity.account.*` |
-| `com.aieducenter.verification.*` | `com.aieducenter.aieducenteridentity.verification.*` |
+| `com.semgravio.account.*` | `com.semgravio.semgravioidentity.account.*` |
+| `com.semgravio.verification.*` | `com.semgravio.semgravioidentity.verification.*` |
 
 ---
 
@@ -55,7 +55,7 @@ studio `V1__create_users_table.sql` → 本服务第一个迁移脚本，按 1.1
 ---
 
 ## 2. 净新增（studio 没有，要建）
-1. **社交登录（微信）**：`external_identities` 表 + OAuth 回调控制器 + state/PKCE + 绑定/解绑。详见 CONTEXT.md「社交登录」。
+1. **社交登录（微信）**：`external_identities` 表 + OAuth 回调控制器 + state/PKCE + 绑定/解绑。详见 GLOSSARY.md「社交登录」。
 2. **OIDC 层（ADR-0003）**：`/authorize` `/token` `/userinfo` `/jwks` `/discovery` `/logout`，自签 JWT、维护 jwks。
 3. **token 升级（ADR-0002）**：access + refresh + id_token（都按 JWT 决策）。
 4. **`/me` 端点**：返回当前用户 profile（studio 缺，前端 fetch 会 404）。

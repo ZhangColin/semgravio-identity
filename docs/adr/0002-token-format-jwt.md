@@ -19,4 +19,4 @@ OIDC 规范涉及三种 token：`id_token`（规范要求 JWT）、`access_token
 - **升级位**：若将来业务强要「立即失效」（封号/登出实时），引入 token 黑名单或 `tokenVersion` 字段（用户登出/封号即递增，旧 token 失效），不必改 token 格式。
 
 ## 关联
-[CONTEXT.md](../../CONTEXT.md) 术语表 · BFF 模式（token 只存服务端，见平台 architecture.md §6.1.④）
+[GLOSSARY.md](../../GLOSSARY.md) 术语表 · BFF 模式（token 只存服务端，见平台 architecture.md §6.1.④）

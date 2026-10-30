@@ -23,4 +23,4 @@
 - **本期不做 MFA**（见待决议题；除非未来提出特别需求）。
 
 ## 关联
-[CONTEXT.md](../../CONTEXT.md) 术语表 · 平台 [architecture.md §6.1](../../../../aieducenter-architecture/docs/architecture.md)
+[GLOSSARY.md](../../GLOSSARY.md) 术语表 · 平台 [architecture.md §6.1](../../../../semgravio-architecture/docs/architecture.md)

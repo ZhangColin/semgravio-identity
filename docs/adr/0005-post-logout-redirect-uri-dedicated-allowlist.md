@@ -2,7 +2,7 @@
 
 - 状态：已定
 - 日期：2026-08-10
-- 修订：[CONTEXT.md](../../CONTEXT.md) 登出条目与安全集中「post_logout_redirect_uri 同 redirect_uri（校验）」的表述
+- 修订：[GLOSSARY.md](../../GLOSSARY.md) 登出条目与安全集中「post_logout_redirect_uri 同 redirect_uri（校验）」的表述
 
 ## 背景
 
@@ -30,11 +30,11 @@ RP-Initiated Logout 的 `post_logout_redirect_uri`（登出后把浏览器带回
 
 - **app-registry（跨仓，发 issue）**：client 表加列 `post_logout_redirect_uris` + Flyway 迁移 + `/api/app-registry/sso-clients/{clientId}` 返回新字段 + demo client 注册数据填首页 URI。
 - **identity 本仓**：`SsoClient` record 加 `postLogoutRedirectUris`；`RemoteSsoClientRepositoryAdapter` 映射新字段；`SsoClientValidationService` 加 `requirePostLogoutRedirectUri`；`SsoLogoutAppService.resolvePostLogoutRedirect` 改用新校验。
-- [CONTEXT.md](../../CONTEXT.md) 登出条目、安全必需集同步修订（去掉「同 redirect_uri」）。
+- [GLOSSARY.md](../../GLOSSARY.md) 登出条目、安全必需集同步修订（去掉「同 redirect_uri」）。
 - 不兼容点：app-registry 未下发新字段前，identity 侧按「字段缺失 = 登出回跳白名单为空 = 不跳转」兜底，不阻断登出主流程（会话照清）。
 
 ## 关联
 
-- [CONTEXT.md](../../CONTEXT.md)（登出 / 安全必需集）
+- [GLOSSARY.md](../../GLOSSARY.md)（登出 / 安全必需集）
 - app-registry sso-facet（`CONTEXT.md` §跨项目集成）
 - 触发现场：登出卡在 `/logout` 返 200 空白

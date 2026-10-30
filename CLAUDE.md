@@ -1,4 +1,4 @@
-# aieducenter-identity
+# semgravio-identity（语义引力）
 
 Gateway 网关服务，基于 cartisan-boot 框架。
 
@@ -35,11 +35,11 @@ Gateway 网关服务，基于 cartisan-boot 框架。
 
 ### Domain docs
 
-single-context 布局：根目录 `CONTEXT.md` + `docs/adr/`。详见 `docs/agents/domain.md`。
+single-context 布局：根目录 `GLOSSARY.md` + `docs/adr/`。详见 `docs/agents/domain.md`。
 
 
 ## 平台架构上下文
-本服务（identity）是平台终端用户身份基座 / 集中式 IdP（基础能力层），被所有业务应用消费。完整架构与决策在兄弟仓库 ../aieducenter-architecture/（起步包 docs/starters/identity.md）。
+本服务（identity）是平台终端用户身份基座 / 集中式 IdP（基础能力层），被所有业务应用消费。完整架构与决策在兄弟仓库 ../semgravio-architecture/（起步包 docs/starters/identity.md）。
 
 稳定不变式（务必遵守）：
 - Operator 不在本服务（运营人员认证+角色/部门/岗位在统一后台 admin）——别把运营相关往这塞。
@@ -50,4 +50,4 @@ single-context 布局：根目录 `CONTEXT.md` + `docs/adr/`。详见 `docs/agen
 - 管组织治理角色（owner/admin/member）；应用内业务角色归应用自管，不在本服务。
 
 深度（SSO 时序、为什么 OIDC/BFF、术语、决策记录）：读架构仓库 integration-flows.md §1、architecture.md §6.1、CONTEXT.md、map.md。
-本项目自己的设计演进 → 本项目的 CONTEXT.md + docs/adr/。
+本项目自己的设计演进 → 本项目的 GLOSSARY.md + docs/adr/。
