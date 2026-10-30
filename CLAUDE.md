@@ -1,4 +1,4 @@
-# aieducenter-identity
+# semgravio-identity（语义引力）
 
 Gateway 网关服务，基于 cartisan-boot 框架。
 
@@ -23,20 +23,31 @@ Gateway 网关服务，基于 cartisan-boot 框架。
 - 打包：`mvn package -DskipTests`
 - 变异测试：`mvn org.pitest:pitest-maven:mutationCoverage`
 
-## 开发流程
-
-严格按 Superpowers 技能流程执行：brainstorming → writing-plans → TDD → verification
-
 ## Agent skills
 
 ### Issue tracker
 
-Issues 跟踪在本仓库的 GitHub Issues（ZhangColin/semgravio-identity），通过 `gh` CLI 读写。详见 `docs/agents/issue-tracker.md`。
+问题/工单记录为 GitHub Issues（使用 `gh` CLI）。详见 `docs/agents/issue-tracker.md`。
 
 ### Triage labels
 
-沿用默认五角色标签：needs-triage / needs-info / ready-for-agent / ready-for-human / wontfix。详见 `docs/agents/triage-labels.md`。
+沿用默认的五个 triage 标签（needs-triage / needs-info / ready-for-agent / ready-for-human / wontfix）。详见 `docs/agents/triage-labels.md`。
 
 ### Domain docs
 
-单上下文（single-context）布局：根目录一个 `GLOSSARY.md` + `docs/adr/`。详见 `docs/agents/domain.md`。
+single-context 布局：根目录 `GLOSSARY.md` + `docs/adr/`。详见 `docs/agents/domain.md`。
+
+
+## 平台架构上下文
+本服务（identity）是平台终端用户身份基座 / 集中式 IdP（基础能力层），被所有业务应用消费。完整架构与决策在兄弟仓库 ../semgravio-architecture/（起步包 docs/starters/identity.md）。
+
+稳定不变式（务必遵守）：
+- Operator 不在本服务（运营人员认证+角色/部门/岗位在统一后台 admin）——别把运营相关往这塞。
+- SSO 走 OIDC（/authorize /token /userinfo /jwks /discovery）；token 只存服务端，浏览器不接触 token。
+- 应用不持有用户凭据；社交登录（微信/Google/Apple）归本域统一接入、归一到中央 Account。
+- tenantId 全程可空（C 端无感，无租户按 userId 隔离）；写侧需自带租户过滤（cartisan-boot 写侧无自动过滤）。
+- 鉴权机器用 cartisan-security（共享库、不建用户表）——本服务自带 account 凭据表、实现 authenticate()/StpInterface；只 Account 一种身份，Sa-Token 默认 loginType 即可。
+- 管组织治理角色（owner/admin/member）；应用内业务角色归应用自管，不在本服务。
+
+深度（SSO 时序、为什么 OIDC/BFF、术语、决策记录）：读架构仓库 integration-flows.md §1、architecture.md §6.1、CONTEXT.md、map.md。
+本项目自己的设计演进 → 本项目的 GLOSSARY.md + docs/adr/。

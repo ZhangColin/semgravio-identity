@@ -10,3 +10,26 @@ spring:
 
 spring.jpa.show-sql: false
 logging.level.root: INFO
+
+# app-registry bootstrap（#30）：prod 必须显式提供 base-url（内网服务地址）
+identity:
+  token:
+    jwt:
+      # issuer 是环境事实（计划生产域名 https://identity.semgravio.com 只活在 env 值里，不进配置文件）：
+      # 裸 ${} 无默认，env 缺失时未解析字面量由 EnvironmentUrlGuard 启动拦截（fail-fast，#74）
+      issuer: ${IDENTITY_TOKEN_ISSUER}
+  sso:
+    # /authorize 未登录 302 登录页（identity-web），prod 走 env、缺失由 guard 启动拦截（同上）
+    login-page-url: ${IDENTITY_SSO_LOGIN_PAGE_URL}
+    # 浏览器类端点出错时 302 跳 identity-web 兜底页（ADR-0006，prod 走 env）
+    error-page-url: ${IDENTITY_SSO_ERROR_PAGE_URL}
+    app-registry:
+      base-url: ${APP_REGISTRY_BASE_URL}
+
+# 入站机机验签凭据查询端点（#46，对齐 payment 迁移）：
+# prod 用裸 ${APP_REGISTRY_BASE_URL}（无默认值）：缺失 env 时启动即失败（fail-fast），
+# 避免静默回落 localhost 导致 URL 替换失效、验签查不到凭据。要求 APP_REGISTRY_BASE_URL 解析到 app-registry 的内网地址。
+# self.*（出站签名凭据）不在本 issue 范围，由 application.yml 的 ${OPENAPI_API_KEY:}/${OPENAPI_API_SECRET:} 走 env。
+cartisan:
+  openapi:
+    apikey-service-url: ${APP_REGISTRY_BASE_URL}/api/app-registry/api-keys/{apiKey}

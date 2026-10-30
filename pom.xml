@@ -11,8 +11,8 @@
         <version>0.1.0-SNAPSHOT</version>
     </parent>
 
-    <groupId>com.aieducenter</groupId>
-    <artifactId>aieducenter-identity</artifactId>
+    <groupId>com.semgravio</groupId>
+    <artifactId>semgravio-identity</artifactId>
     <version>1.0.0-SNAPSHOT</version>
 
     <properties>
@@ -20,7 +20,36 @@
         <maven.compiler.target>21</maven.compiler.target>
         <postgresql.version>42.7.4</postgresql.version>
         <pitest.junit5.plugin.version>1.2.3</pitest.junit5.plugin.version>
+        <!-- 覆盖 spring-boot 3.4 BOM 自带的 testcontainers 1.20.4：1.20.x shaded 的 docker-java
+             与 Docker Engine 29（MinAPIVersion=1.44）不兼容。升到 1.21.4（最新 1.x）。
+             子 POM dependencyManagement 最近原则，优先于父 BOM。 -->
+        <testcontainers.version>1.21.4</testcontainers.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers</artifactId>
+                <version>${testcontainers.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>postgresql</artifactId>
+                <version>${testcontainers.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>jdbc</artifactId>
+                <version>${testcontainers.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>database-commons</artifactId>
+                <version>${testcontainers.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <!-- Spring Boot Starters -->
@@ -81,16 +110,33 @@
             <artifactId>cartisan-openapi</artifactId>
             <version>0.1.0-SNAPSHOT</version>
         </dependency>
-        <dependency>
-            <groupId>com.cartisan</groupId>
-            <artifactId>cartisan-security</artifactId>
-            <version>0.1.0-SNAPSHOT</version>
-        </dependency>
 
         <!-- Security -->
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-crypto</artifactId>
+        </dependency>
+        <!-- client_secret argon2 比对所需：spring-security-crypto 的 Argon2PasswordEncoder 运行时走
+             BouncyCastle，crypto 将其声明为可选、Boot 3.4 BOM 不管理版本，故显式钉 1.78.1
+             （与 app-registry 一致、匹配 spring-security 6.4.x）。CONTEXT「跨项目集成」。 -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk18on</artifactId>
+            <version>1.78.1</version>
+        </dependency>
+        <!-- SSO client 本地缓存（Caffeine 30min TTL，命中省远程；Boot BOM 托管版本，不钉）。 -->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
+
+        <!-- JWT 签名/验签（RS256）+ 未来 JWKS（ADR-0002 / issue #11）。
+             spring-boot 3.4 BOM 与 cartisan-boot BOM 均未托管，钉版本。
+             10.x 以 Java 21 为基线，与本工程一致；不引入 BouncyCastle（RS256 签名/验签 + RSA 密钥生成 nimbus + JDK 即可）。 -->
+        <dependency>
+            <groupId>com.nimbusds</groupId>
+            <artifactId>nimbus-jose-jwt</artifactId>
+            <version>10.9.1</version>
         </dependency>
 
         <!-- Utilities -->
@@ -133,6 +179,26 @@
             <version>0.1.0-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- Testcontainers（真 Postgres + Redis 集成测试；版本由 dependencyManagement 钉到 1.21.4） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- WireMock：stub app-registry bootstrap 端点，集成测试消费方解析迁离 stub 适配器（#30）。
+             用 standalone（自含 Jetty 11）避免与 Spring Boot 3.4 锁的 Jetty 12 版本冲突。 -->
+        <dependency>
+            <groupId>org.wiremock</groupId>
+            <artifactId>wiremock-standalone</artifactId>
+            <version>3.9.1</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -160,7 +226,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>3.4.1</version>
                 <configuration>
-                    <mainClass>com.aieducenter.aieducenteridentity.AieducenterIdentityApplication</mainClass>
+                    <mainClass>com.semgravio.semgravioidentity.SemgravioIdentityApplication</mainClass>
                     <jvmArguments>--enable-preview</jvmArguments>
                 </configuration>
                 <executions>
@@ -183,7 +249,7 @@
                 </dependencies>
                 <configuration>
                     <targetClasses>
-                        <param>com.aieducenter.aieducenteridentity.*</param>
+                        <param>com.semgravio.semgravioidentity.*</param>
                     </targetClasses>
                     <mutators>DEFAULTS</mutators>
                     <mutationThreshold>70</mutationThreshold>

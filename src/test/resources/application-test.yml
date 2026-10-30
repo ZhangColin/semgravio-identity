@@ -1,0 +1,28 @@
+# 测试 profile：datasource / Redis 连接信息由 @ServiceConnection 自动注入（见 TestContainersConfig）。
+spring:
+  jpa:
+    show-sql: false
+  # 排除 Druid 自动配置：Druid 直接读 spring.datasource.url，绕过 Spring Boot 的 ConnectionDetails 机制，
+  # 导致 @ServiceConnection 对 Postgres 容器失效（Failed to determine suitable jdbc url）。
+  # 测试改用 HikariCP（Spring Boot 默认，认 ConnectionDetails）。生产仍用 Druid（连接池/监控）。
+  autoconfigure:
+    exclude:
+      - com.alibaba.druid.spring.boot3.autoconfigure.DruidDataSourceAutoConfigure
+
+# 服务间签名（#31）：测试占位凭据——WireMock 只验签名头存在、不验签名值（AC#1）。
+# OpenApiClient blank 凭据首调即抛，故须给非空占位。
+cartisan:
+  openapi:
+    self:
+      api-key: test-identity-key
+      api-secret: test-identity-secret
+
+# 环境绝对 URL（#74）：base 不带默认值，test 补齐（issuer 与 local 同一字面量）。
+# 断言全走「配置值 == 返回值」自洽，不依赖具体字面量。
+identity:
+  token:
+    jwt:
+      issuer: http://identity.localhost:10001
+  sso:
+    login-page-url: http://identity.localhost:10002/login
+    error-page-url: http://identity.localhost:10002/error
